@@ -2,6 +2,7 @@ import { constants } from 'buffer'
 import { User } from '../models/User'
 import { Request, Response} from 'express'
 import bcrypt  from 'bcrypt'
+import { createUserToken } from '../helpers/create-user-token'
 
 export class UserController {
 
@@ -60,8 +61,8 @@ export class UserController {
         try {
 
             const newUser = await user.save()
-            res.status(201).json(newUser)
-            return
+            
+            await createUserToken(newUser, req, res)
 
         } catch(error) {
             if(error instanceof Error){
