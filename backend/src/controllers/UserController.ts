@@ -1,8 +1,8 @@
 import { constants } from 'buffer'
-import { User } from '../models/User'
+import { User } from '../models/User.js'
 import { Request, Response} from 'express'
 import bcrypt  from 'bcrypt'
-import { createUserToken } from '../helpers/create-user-token'
+import { createUserToken } from '../helpers/create-user-token.js'
 
 export class UserController {
 
