@@ -1,8 +1,12 @@
-import { constants } from 'buffer'
 import { User } from '../models/User.js'
 import { Request, Response} from 'express'
 import bcrypt  from 'bcrypt'
+import jwt from 'jsonwebtoken'
+
+//Token
 import { createUserToken } from '../helpers/create-user-token.js'
+import { getToken } from '../helpers/get-token.js'
+import { ITokenPayLoad } from '../types/TokenPayLoad.js'
 
 export class UserController {
 
@@ -102,6 +106,35 @@ export class UserController {
         }
 
         await createUserToken(user, req, res)
+
+    }
+
+    static async checkUser(req: Request, res: Response){
+
+        let currentUser
+        const JWT_TOKEN = process.env.JWT_TOKEN || ""
+
+        if(req.headers.authorization){
+
+            const token = getToken(req)
+            console.log(token)
+
+            if(!token){
+                currentUser = null
+            } else {
+                try {
+                    const decoded = jwt.verify(token, JWT_TOKEN) as ITokenPayLoad
+                    currentUser = await User.findById(decoded.id).select('-password')
+                } catch (error) {
+                    currentUser = null;
+                }
+            }
+
+        } else {
+            currentUser = null
+        }
+
+        res.status(200).send(currentUser)
 
     }
 
