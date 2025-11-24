@@ -7,3 +7,4 @@ import {User, type IUser} from '../models/User.js'
 router.post('/register', UserController.register)
 router.post('/login', UserController.login)
 router.get('/checkUser', UserController.checkUser)
+router.get('/:id', UserController.findUserById)

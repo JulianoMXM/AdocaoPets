@@ -40,7 +40,7 @@ export class UserController {
             return
         }
 
-        //Teste de usuário existente
+        //Test if user already exists
 
         const userExists = await User.findOne({email: email})
 
@@ -49,7 +49,7 @@ export class UserController {
             return
         }
 
-        //Criação de senha
+        //Password creation
         const salt = await bcrypt.genSalt(12)
         const passwordHash = await bcrypt.hash(password, salt)
 
@@ -134,7 +134,50 @@ export class UserController {
             currentUser = null
         }
 
-        res.status(200).send(currentUser)
+        res.status(200).json(currentUser)
+
+    }
+
+    static async findUserById(req: Request, res: Response){
+
+        const id = req.params.id
+
+        try{
+            const user = await User.findById(id).select('-password')
+
+            if(!user){
+
+                res.status(404).json({message: 'Usuário não encontrado.'})
+                return
+            }
+
+            res.status(200).json(user)
+
+        }catch(error){
+
+            if(error instanceof Error){
+                return res.status(500).json({error: error.message})
+            }
+            res.status(500).json({error: 'Erro desconhecido.'})
+        }
+
+    }
+
+    static async editUser(req: Request, res: Response){
+
+        const id = req.params.id
+
+        const {name, email, phone, password, confirmpassword} = req.body
+
+        const user = await User.findById(id)
+
+        if(!user){
+
+            res.status(404).json({message: 'Usuário não encontrado.'})
+            return
+
+        }
+
 
     }
 
