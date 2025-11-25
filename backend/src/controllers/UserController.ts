@@ -7,6 +7,7 @@ import jwt from 'jsonwebtoken'
 import { createUserToken } from '../helpers/create-user-token.js'
 import { getToken } from '../helpers/get-token.js'
 import { ITokenPayLoad } from '../types/TokenPayLoad.js'
+import { getUserByToken } from '../helpers/get-user-by-token.js'
 
 export class UserController {
 
@@ -15,28 +16,28 @@ export class UserController {
         const {name, email, password, confirmpassword, phone} = req.body
 
         if(!name){
-            res.status(422).json({message: 'O nome é obrigatório.'})
+            res.status(422).json({message: 'Name is required.'})
             return
         }
         if(!email){
-            res.status(422).json({message: 'O email é obrigatório.'})
+            res.status(422).json({message: 'Email is required.'})
             return
         }
         if(!password){
-            res.status(422).json({message: 'A senha é obrigatória.'})
+            res.status(422).json({message: 'Password is required.'})
             return
         }
         if(!confirmpassword){
-            res.status(422).json({message: 'A confirmação de senha é obrigatória.'})
+            res.status(422).json({message: 'Confirmation password is required.'})
             return
         }
         if(!phone){
-            res.status(422).json({message: 'O telefone é obrigatório.'})
+            res.status(422).json({message: 'Phone is required.'})
             return
         }
 
         if(password !== confirmpassword){
-            res.status(422).json({message: 'As senhas digitadas são diferentes.'})
+            res.status(422).json({message: "Passwords don't match."})
             return
         }
 
@@ -45,7 +46,7 @@ export class UserController {
         const userExists = await User.findOne({email: email})
 
         if(userExists){
-            res.status(422).json({message: 'Já existe um usuário com esse email.'})
+            res.status(422).json({message: 'Email already in usage.'})
             return
         }
 
@@ -53,7 +54,7 @@ export class UserController {
         const salt = await bcrypt.genSalt(12)
         const passwordHash = await bcrypt.hash(password, salt)
 
-        //Criação de Usuário
+        //User creation
 
         const user = new User({
             name,
@@ -81,27 +82,26 @@ export class UserController {
         const {email, password} = req.body
 
         if(!email){
-            res.status(422).json({message: 'O email é obrigatório.'})
+            res.status(422).json({message: 'Email is required.'})
             return
         }
         if(!password){
-            res.status(422).json({message: 'A senha é obrigatória.'})
+            res.status(422).json({message: 'Password is required.'})
             return
         }
 
         const user = await User.findOne({email: email})
 
-        //Checa se o email existe
-
+        //Check if there's an user with this email
         if(!user){
-            res.status(422).json({message: 'Email inválido.'})
+            res.status(422).json({message: 'Invalid email.'})
             return
         }
 
         const checkPassword = await bcrypt.compare(password, user.password)
 
         if(!checkPassword){
-            res.status(422).json({message: 'Senha inválida.'})
+            res.status(422).json({message: 'Invalid password.'})
             return
         }
 
@@ -147,7 +147,7 @@ export class UserController {
 
             if(!user){
 
-                res.status(404).json({message: 'Usuário não encontrado.'})
+                res.status(404).json({message: 'User not found.'})
                 return
             }
 
@@ -158,7 +158,7 @@ export class UserController {
             if(error instanceof Error){
                 return res.status(500).json({error: error.message})
             }
-            res.status(500).json({error: 'Erro desconhecido.'})
+            res.status(500).json({error: 'Unknown error.'})
         }
 
     }
@@ -167,15 +167,75 @@ export class UserController {
 
         const id = req.params.id
 
-        const {name, email, phone, password, confirmpassword} = req.body
+        //Check token
+        const token = getToken(req)
 
-        const user = await User.findById(id)
+        if(!token){
+            res.status(401).json({message: 'Login to continue.'})
+            return
+        }
+
+        const user = await getUserByToken(token)
+
+        const {name, email, phone, password, confirmpassword} = req.body
 
         if(!user){
 
-            res.status(404).json({message: 'Usuário não encontrado.'})
+            res.status(404).json({message: 'User not found.'})
             return
 
+        }
+
+        if(name){
+            user.name = name
+        }
+
+        if(phone){
+            user.phone = phone
+        }
+
+        //If a new email was sent
+        if(email){
+            //If new email equals the email in usage
+            if(user.email !== email){
+                const userExists = await User.findOne({email: email})
+
+                //If there's already an user with this email and it's not the own person
+                if(userExists && (userExists.id !== id)){
+                    res.status(422).json({message: 'Please use another email.'})
+                    return
+                }
+                user.email = email
+            }
+        }
+
+        if(password){
+            if(password !== confirmpassword){
+
+                res.status(422).json({message: "Passwords don't match."})
+                return
+
+            }
+
+            if(password === confirmpassword && password != null){
+
+                //Password creation
+                const salt = await bcrypt.genSalt(12)
+                const passwordHash = await bcrypt.hash(password, salt)
+
+                user.password = passwordHash
+            }
+        }
+
+        try{
+            await user.save()
+            res.status(200).json({message: 'User updated.'})
+
+        } catch (error){
+            if(error instanceof Error){
+                return res.status(500).json({error: error.message})
+            }
+            res.status(500).json({error: 'Unknown error.'})
         }
 
 
