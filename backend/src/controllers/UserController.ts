@@ -186,6 +186,12 @@ export class UserController {
 
         }
 
+        //If typed id is not the user id
+        if(user._id.toString() !== id){
+            res.status(401).json({message: 'Not authorized.'})
+            return
+        }
+
         if(name){
             user.name = name
         }
@@ -193,7 +199,7 @@ export class UserController {
         if(phone){
             user.phone = phone
         }
-
+        
         //If a new email was sent
         if(email){
             //If new email equals the email in usage
@@ -201,7 +207,7 @@ export class UserController {
                 const userExists = await User.findOne({email: email})
 
                 //If there's already an user with this email and it's not the own person
-                if(userExists && (userExists.id !== id)){
+                if(userExists && (userExists.id !== user.id)){
                     res.status(422).json({message: 'Please use another email.'})
                     return
                 }
