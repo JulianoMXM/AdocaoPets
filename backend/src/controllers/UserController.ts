@@ -117,7 +117,6 @@ export class UserController {
         if(req.headers.authorization){
 
             const token = getToken(req)
-            console.log(token)
 
             if(!token){
                 currentUser = null
@@ -175,11 +174,11 @@ export class UserController {
             return
         }
 
-        const userToUpdate = await getUserByToken(token)
+        const user = await getUserByToken(token)
 
         const {name, email, phone, password, confirmpassword} = req.body
 
-        if(!userToUpdate){
+        if(!user){
 
             res.status(404).json({message: 'User not found.'})
             return
@@ -187,31 +186,31 @@ export class UserController {
         }
 
         //If typed id is not the user id
-        if(userToUpdate._id.toString() !== id){
+        if(user._id.toString() !== id){
             res.status(401).json({message: 'Not authorized.'})
             return
         }
 
         if(name){
-            userToUpdate.name = name
+            user.name = name
         }
 
         if(phone){
-            userToUpdate.phone = phone
+            user.phone = phone
         }
         
         //If a new email was sent
         if(email){
             //If new email equals the email in usage
-            if(userToUpdate.email !== email){
+            if(user.email !== email){
                 const userExists    = await User.findOne({email: email})
 
                 //If there's already an user with this email and it's not the own person
-                if(userExists && (userExists.id !== userToUpdate.id)){
+                if(userExists && (userExists.id !== user.id)){
                     res.status(422).json({message: 'Please use another email.'})
                     return
                 }
-                userToUpdate.email = email
+                user.email = email
             }
         }
 
@@ -226,11 +225,11 @@ export class UserController {
                 const salt = await bcrypt.genSalt(12)
                 const passwordHash = await bcrypt.hash(password, salt)
 
-                userToUpdate.password = passwordHash
+                user.password = passwordHash
         }
 
         try{
-            await userToUpdate.save()
+            await user.save()
             res.status(200).json({message: 'User updated.'})
 
         } catch (error){
@@ -240,6 +239,43 @@ export class UserController {
             res.status(500).json({error: 'Unknown error.'})
         }
 
+
+    }
+
+    static async deleteUser(req: Request, res: Response){
+
+        const id = req.params.id
+
+        //Check token
+        const token = getToken(req)
+
+        if(!token){
+            res.status(401).json({message: 'Login to continue.'})
+            return
+        }
+
+        const user = await getUserByToken(token)
+
+        if(!user){
+            res.status(404).json({message: 'User not found.'})
+            return 
+        }
+
+        if(user._id.toString() !== id){
+            res.status(401).json({message: 'Not authorized.'})
+            return
+        }
+
+        try{
+            await user.deleteOne()
+            res.status(200).json({message: 'User deleted.'})
+
+        } catch (error){
+            if(error instanceof Error){
+                return res.status(500).json({error: error.message})
+            }
+            res.status(500).json({error: 'Unknown error.'})
+        }
 
     }
 
