@@ -7,7 +7,7 @@ import jwt from 'jsonwebtoken'
 import { createUserToken } from '../helpers/create-user-token.js'
 import { getToken } from '../helpers/get-token.js'
 import { ITokenPayLoad } from '../types/TokenPayLoad.js'
-import { getUserByToken } from '../helpers/get-user-by-token.js'
+import { IRequestWithUser } from '../types/RequestWithUser.js'
 
 export class UserController {
 
@@ -150,18 +150,13 @@ export class UserController {
 
     }
 
-    static async editUser(req: Request, res: Response){
+    static async editUser(req: IRequestWithUser, res: Response){
 
         const id = req.params.id
 
-        //Check token
-        const token = getToken(req)
+        const tokenUserId = (req.user as ITokenPayLoad).id
 
-        if(!token){
-            return res.status(401).json({message: 'Login to continue.'})
-        }
-
-        const user = await getUserByToken(token)
+        const user = await User.findById(tokenUserId)
 
         const {name, email, phone, password, confirmpassword} = req.body
 
@@ -223,18 +218,13 @@ export class UserController {
 
     }
 
-    static async deleteUser(req: Request, res: Response){
+    static async deleteUser(req: IRequestWithUser, res: Response){
 
         const id = req.params.id
 
-        //Check token
-        const token = getToken(req)
+        const tokenUserId = (req.user as ITokenPayLoad).id
 
-        if(!token){
-            return res.status(401).json({message: 'Login to continue.'})
-        }
-
-        const user = await getUserByToken(token)
+        const user = await User.findById(tokenUserId)
 
         if(!user){
             return res.status(404).json({message: 'User not found.'})
