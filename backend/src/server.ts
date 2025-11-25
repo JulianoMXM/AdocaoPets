@@ -5,7 +5,7 @@ import { router as UserRoutes} from './routes/UserRoutes.js'
 import { router as PetRoutes} from './routes/PetRoutes.js'
 const app = express()
 
-//  Configuração de leitura de JSON
+//  JSON configuration
 
 app.use(
     express.urlencoded({
@@ -15,15 +15,15 @@ app.use(
 
 app.use(express.json())
 
-//  Porta utilizada
+//  Door used
 
 main().then(() => {
     app.listen(3000, () => {
-        console.log('Servidor Rodando')
+        console.log('Server Working')
     })
 })
     
-//  Rotas da API
+//  Routes
 
 app.use('/users', UserRoutes)
 //app.use('/pets', PetRoutes)
