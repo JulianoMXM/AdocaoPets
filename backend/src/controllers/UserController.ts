@@ -16,29 +16,23 @@ export class UserController {
         const {name, email, password, confirmpassword, phone} = req.body
 
         if(!name){
-            res.status(422).json({message: 'Name is required.'})
-            return
+            return res.status(422).json({message: 'Name is required.'})
         }
         if(!email){
-            res.status(422).json({message: 'Email is required.'})
-            return
+            return res.status(422).json({message: 'Email is required.'})
         }
         if(!password){
-            res.status(422).json({message: 'Password is required.'})
-            return
+            return res.status(422).json({message: 'Password is required.'})
         }
         if(!confirmpassword){
-            res.status(422).json({message: 'Confirmation password is required.'})
-            return
+            return res.status(422).json({message: 'Confirmation password is required.'})
         }
         if(!phone){
-            res.status(422).json({message: 'Phone is required.'})
-            return
+            return res.status(422).json({message: 'Phone is required.'})
         }
 
         if(password !== confirmpassword){
-            res.status(422).json({message: "Passwords don't match."})
-            return
+            return res.status(422).json({message: "Passwords don't match."})
         }
 
         //Test if user already exists
@@ -46,8 +40,7 @@ export class UserController {
         const userExists = await User.findOne({email: email})
 
         if(userExists){
-            res.status(422).json({message: 'Email already in usage.'})
-            return
+            return res.status(422).json({message: 'Email already in usage.'})
         }
 
         //Password hash creation
@@ -71,8 +64,9 @@ export class UserController {
 
         } catch(error) {
             if(error instanceof Error){
-                res.status(500).json({message: error.message})
+                return res.status(500).json({message: error.message})
             }
+            res.status(500).json({error: 'Unknown error.'})
         }
 
     }
@@ -82,27 +76,23 @@ export class UserController {
         const {email, password} = req.body
 
         if(!email){
-            res.status(422).json({message: 'Email is required.'})
-            return
+            return res.status(422).json({message: 'Email is required.'})
         }
         if(!password){
-            res.status(422).json({message: 'Password is required.'})
-            return
+            return res.status(422).json({message: 'Password is required.'})
         }
 
         const user = await User.findOne({email: email})
 
         //Check if there's an user with this email
         if(!user){
-            res.status(422).json({message: 'Invalid email.'})
-            return
+            return res.status(422).json({message: 'Invalid email.'})
         }
 
         const checkPassword = await bcrypt.compare(password, user.password)
 
         if(!checkPassword){
-            res.status(422).json({message: 'Invalid password.'})
-            return
+            return res.status(422).json({message: 'Invalid password.'})
         }
 
         await createUserToken(user, req, res)
@@ -145,9 +135,7 @@ export class UserController {
             const user = await User.findById(id).select('-password')
 
             if(!user){
-
-                res.status(404).json({message: 'User not found.'})
-                return
+                return res.status(404).json({message: 'User not found.'})
             }
 
             res.status(200).json(user)
@@ -170,8 +158,7 @@ export class UserController {
         const token = getToken(req)
 
         if(!token){
-            res.status(401).json({message: 'Login to continue.'})
-            return
+            return res.status(401).json({message: 'Login to continue.'})
         }
 
         const user = await getUserByToken(token)
@@ -179,16 +166,12 @@ export class UserController {
         const {name, email, phone, password, confirmpassword} = req.body
 
         if(!user){
-
-            res.status(404).json({message: 'User not found.'})
-            return
-
+            return res.status(404).json({message: 'User not found.'})
         }
 
         //If typed id is not the user id
         if(user._id.toString() !== id){
-            res.status(401).json({message: 'Not authorized.'})
-            return
+            return res.status(401).json({message: 'Not authorized.'})
         }
 
         if(name){
@@ -207,8 +190,7 @@ export class UserController {
 
                 //If there's already an user with this email and it's not the own person
                 if(userExists && (userExists.id !== user.id)){
-                    res.status(422).json({message: 'Please use another email.'})
-                    return
+                    return res.status(422).json({message: 'Please use another email.'})
                 }
                 user.email = email
             }
@@ -217,8 +199,7 @@ export class UserController {
         if(password){
             if(password !== confirmpassword){
 
-                res.status(422).json({message: "Passwords don't match."})
-                return
+                return res.status(422).json({message: "Passwords don't match."})
 
             }
                 //Password hash creation
@@ -250,20 +231,17 @@ export class UserController {
         const token = getToken(req)
 
         if(!token){
-            res.status(401).json({message: 'Login to continue.'})
-            return
+            return res.status(401).json({message: 'Login to continue.'})
         }
 
         const user = await getUserByToken(token)
 
         if(!user){
-            res.status(404).json({message: 'User not found.'})
-            return 
+            return res.status(404).json({message: 'User not found.'})
         }
 
         if(user._id.toString() !== id){
-            res.status(401).json({message: 'Not authorized.'})
-            return
+            return res.status(401).json({message: 'Not authorized.'})
         }
 
         try{
