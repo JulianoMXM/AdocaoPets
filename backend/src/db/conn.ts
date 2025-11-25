@@ -7,12 +7,12 @@ export async function main(){
 
     try{
         await mongoose.connect(`mongodb+srv://${DB_USER}:${DB_PASSWORD}@projetosunect.wtzr5ke.mongodb.net/`)
-        console.log('Conectado');
+        console.log('Connected');
     } catch(error) {
         if(error instanceof Error){
-            console.log('Erro ao conectar ao banco: ' + error.message)
+            console.log('Error while connecting: ' + error.message)
         } else {
-            console.log('Erro desconhecido ao conectar: ' + error)
+            console.log('Unknown error while connecting: ' + error)
         }
         
     }
