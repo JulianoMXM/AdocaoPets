@@ -50,7 +50,7 @@ export class UserController {
             return
         }
 
-        //Password creation
+        //Password hash creation
         const salt = await bcrypt.genSalt(12)
         const passwordHash = await bcrypt.hash(password, salt)
 
@@ -175,11 +175,11 @@ export class UserController {
             return
         }
 
-        const user = await getUserByToken(token)
+        const userToUpdate = await getUserByToken(token)
 
         const {name, email, phone, password, confirmpassword} = req.body
 
-        if(!user){
+        if(!userToUpdate){
 
             res.status(404).json({message: 'User not found.'})
             return
@@ -187,31 +187,31 @@ export class UserController {
         }
 
         //If typed id is not the user id
-        if(user._id.toString() !== id){
+        if(userToUpdate._id.toString() !== id){
             res.status(401).json({message: 'Not authorized.'})
             return
         }
 
         if(name){
-            user.name = name
+            userToUpdate.name = name
         }
 
         if(phone){
-            user.phone = phone
+            userToUpdate.phone = phone
         }
         
         //If a new email was sent
         if(email){
             //If new email equals the email in usage
-            if(user.email !== email){
-                const userExists = await User.findOne({email: email})
+            if(userToUpdate.email !== email){
+                const userExists    = await User.findOne({email: email})
 
                 //If there's already an user with this email and it's not the own person
-                if(userExists && (userExists.id !== user.id)){
+                if(userExists && (userExists.id !== userToUpdate.id)){
                     res.status(422).json({message: 'Please use another email.'})
                     return
                 }
-                user.email = email
+                userToUpdate.email = email
             }
         }
 
@@ -222,19 +222,15 @@ export class UserController {
                 return
 
             }
-
-            if(password === confirmpassword && password != null){
-
-                //Password creation
+                //Password hash creation
                 const salt = await bcrypt.genSalt(12)
                 const passwordHash = await bcrypt.hash(password, salt)
 
-                user.password = passwordHash
-            }
+                userToUpdate.password = passwordHash
         }
 
         try{
-            await user.save()
+            await userToUpdate.save()
             res.status(200).json({message: 'User updated.'})
 
         } catch (error){
