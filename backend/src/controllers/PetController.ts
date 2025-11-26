@@ -62,7 +62,7 @@ export class PetController{
 
         try{
             const pets = await Pet.find().sort('-createdAt')
-            res.status(200).json({pets: pets})
+            res.status(200).json({pets})
         } catch (error) {
             if(error instanceof Error){
                 return res.status(500).json({error: error.message})
@@ -93,6 +93,29 @@ export class PetController{
 
         }
         
+    }
+
+    static async findPetById(req: Request, res: Response){
+
+        const id = req.params.id
+
+        try{
+            const pet = await Pet.findById(id)
+
+            if(!pet){
+                return res.status(404).json({message: 'Pet not found.'})
+            }
+
+            return res.status(200).json({pet})
+
+        } catch (error) {
+            if(error instanceof Error){
+                return res.status(500).json({error: error.message})
+            }
+            res.status(500).json({error: 'Unknown error.'})
+
+        }
+
     }
 
 }
