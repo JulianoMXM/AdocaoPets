@@ -193,4 +193,101 @@ export class PetController{
 
     }
 
+    static async schedule(req: IRequestWithUser, res: Response){
+
+        const id = req.params.id
+
+        const tokenUserId = (req.user as ITokenPayLoad).id
+
+        try{
+
+            const pet = await Pet.findById(id)
+
+            if(!pet){
+                return res.status(404).json({message: 'Pet not found.'})
+            }
+
+            if(pet.available === false){    //Check if pet has already been adopted
+                return res.status(422).json({message: 'This pet id already adopted and not available for visits.'})
+            }
+
+            const user = await User.findById(tokenUserId)
+
+            if(!user){
+                return res.status(404).json({message: 'User not found.'})
+            }
+
+            if(pet.user._id.toString() === tokenUserId){
+                return res.status(422).json({message: "You can't schedule a visit with your own pet."})
+            }
+
+            if(pet.adopter){
+                if(pet.adopter._id.toString() === tokenUserId){
+                    return res.status(422).json({message: 'You already scheduled a visit for this pet.'})
+                }
+
+                return res.status(422).json({message: 'There is already a visit scheduled for this pet.'})
+            }
+
+            pet.adopter = {
+                _id: user._id,
+                name: user.name,
+                phone: user.phone
+            }
+
+            await pet.save()
+
+            res.status(200).json({message: `The visit was scheduled with success, contact ${pet.user.name} by phone ${pet.user.phone}`})
+
+        } catch (error) {
+            if(error instanceof Error){
+                return res.status(500).json({error: error.message})
+            }
+            res.status(500).json({error: 'Unknown error.'})
+
+        }
+
+    }
+    
+    static async removeSchedule(req: IRequestWithUser, res: Response){
+
+        const id = req.params.id
+        const tokenUserId = (req.user as ITokenPayLoad).id
+
+        try{
+
+            const pet = await Pet.findById(id)
+
+            if(!pet){
+                return res.status(404).json({message: 'Pet not found.'})
+            }
+
+            if(pet.available === false){    //Check if pet has already been adopted
+                return res.status(422).json({message: 'This pet is already adopted and not available for visits.'})
+            }
+
+            if(!pet.adopter){
+                return res.status(422).json({message: "This pet doesn't have a visit scheduled."})
+            }
+
+            if(pet.user._id.toString() === tokenUserId || pet.adopter._id.toString() === tokenUserId){
+                pet.adopter = null
+                await pet.save()
+                return res.status(200).json({message: 'Scheduled visit removed with success.'})
+            }
+
+            return res.status(401).json({message: 'Not authorized.'})
+
+
+
+        } catch (error) {
+            if(error instanceof Error){
+                return res.status(500).json({error: error.message})
+            }
+            res.status(500).json({error: 'Unknown error.'})
+
+        }
+
+    }
+
 }
