@@ -59,7 +59,7 @@ export class UserController {
         try {
 
             const newUser = await user.save()
-            
+            res.status(201).json({message: 'User created with success.'})
             await createUserToken(newUser, req, res)
 
         } catch(error) {
