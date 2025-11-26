@@ -133,7 +133,7 @@ export class PetController{
                 return res.status(404).json({message: 'Pet not found.'})
             }
 
-            if(pet.user._id !== tokenUserId){
+            if(pet.user._id.toString() !== tokenUserId){
                 return res.status(401).json({message: 'Not authorized.'})
             }
 
@@ -176,7 +176,7 @@ export class PetController{
                 return res.status(404).json({message: 'Pet not found.'})
             }
 
-            if(pet.user._id !== tokenUserId){
+            if(pet.user._id.toString() !== tokenUserId){
                 return res.status(401).json({message: 'Not authorized.'})
             }
 
