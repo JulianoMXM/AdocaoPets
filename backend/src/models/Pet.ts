@@ -1,4 +1,4 @@
-import {Schema, model} from 'mongoose'
+import {Schema, model, Document, Types} from 'mongoose'
 
 export interface IPet extends Document{
 
@@ -8,15 +8,15 @@ export interface IPet extends Document{
     color: string,
     available: boolean,
     user:{
-        _id: string,
+        _id: Types.ObjectId,
         name: string,
         phone: string
     },
     adopter?: {
-        _id: string,
+        _id: Types.ObjectId,
         name: string,
         phone: string
-    },
+    } | null,
     createdAt: Date,
     updatedAt: Date
 
@@ -56,7 +56,7 @@ const petSchema = new Schema<IPet>({
             },
             phone: {
                 type: String,
-                required: true
+                required: true  
             },
             }, {_id: false}), //Don't create a new ID
             required: true
