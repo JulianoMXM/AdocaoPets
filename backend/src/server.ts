@@ -26,4 +26,4 @@ main().then(() => {
 //  Routes
 
 app.use('/users', UserRoutes)
-//app.use('/pets', PetRoutes)
+app.use('/pets', PetRoutes)
