@@ -12,7 +12,11 @@ export interface IPet extends Document{
         name: string,
         phone: string
     },
-    adopter: object,
+    adopter?: {
+        _id: string,
+        name: string,
+        phone: string
+    },
     createdAt: Date,
     updatedAt: Date
 
@@ -53,12 +57,26 @@ const petSchema = new Schema<IPet>({
             phone: {
                 type: String,
                 required: true
+            },
+            }, {_id: false}), //Don't create a new ID
+            required: true
+        },
+        adopter: {
+            type: new Schema({
+                _id: {
+                type: Schema.Types.ObjectId,
+                required: true
+            },
+            name: {
+                type: String,
+                required: true
+            },
+            phone: {
+                type: String,
+                required: true
             }
             }, {_id: false}) //Don't create a new ID
         },
-        adopter: {
-            type: Object
-        }
     }, 
     { timestamps: true }
 );
