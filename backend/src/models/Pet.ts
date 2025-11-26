@@ -7,7 +7,11 @@ export interface IPet extends Document{
     weight: number,
     color: string,
     available: boolean,
-    user: object,
+    user:{
+        _id: string,
+        name: string,
+        phone: string
+    },
     adopter: object,
     createdAt: Date,
     updatedAt: Date
@@ -37,7 +41,18 @@ const petSchema = new Schema<IPet>({
             default: true
         },
         user: {
-            type: Object
+            _id: {
+                type: String,
+                required: true
+            },
+            name: {
+                type: String,
+                required: true
+            },
+            phone: {
+                type: String,
+                required: true
+            }
         },
         adopter: {
             type: Object
