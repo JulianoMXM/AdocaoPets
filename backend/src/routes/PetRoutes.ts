@@ -4,3 +4,4 @@ import { checkToken } from '../helpers/verify-token.js'
 export const router = Router()
 
 router.post('/create', checkToken, PetController.create)
+router.get('/', PetController.getAll)
