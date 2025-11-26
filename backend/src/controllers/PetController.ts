@@ -263,7 +263,7 @@ export class PetController{
             }
 
             if(pet.available === false){    //Check if pet has already been adopted
-                return res.status(422).json({message: 'This pet is already adopted and not available for visits.'})
+                return res.status(422).json({message: 'This pet is already adopted.'})
             }
 
             if(!pet.adopter){
@@ -279,6 +279,47 @@ export class PetController{
             return res.status(401).json({message: 'Not authorized.'})
 
 
+
+        } catch (error) {
+            if(error instanceof Error){
+                return res.status(500).json({error: error.message})
+            }
+            res.status(500).json({error: 'Unknown error.'})
+
+        }
+
+    }
+
+    static async concludeAdoption(req: IRequestWithUser, res: Response){
+
+        const id = req.params.id
+        const tokenUserId = (req.user as ITokenPayLoad).id
+
+        try{
+
+            const pet = await Pet.findById(id)
+
+            if(!pet){
+                return res.status(404).json({message: 'Pet not found.'})
+            }
+
+            if(pet.user._id.toString() !== tokenUserId){
+                return res.status(401).json({message: 'Not authorized.'})
+            }
+
+            if(pet.available === false){    //Check if pet has already been adopted
+                return res.status(422).json({message: 'This pet is already adopted.'})
+            }
+
+            if(!pet.adopter){
+                return res.status(422).json({message: "This pet doesn't have a visit scheduled, so it can't be adopted yet."})
+            }
+
+            pet.available = false
+
+            await pet.save()
+
+            return res.status(200).json({message: 'Pet adopted with success.'})
 
         } catch (error) {
             if(error instanceof Error){
