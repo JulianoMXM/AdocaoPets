@@ -60,10 +60,39 @@ export class PetController{
 
     static async getAll(req: Request, res: Response){
 
-        const pets = await Pet.find().sort('-createdAt')
+        try{
+            const pets = await Pet.find().sort('-createdAt')
+            res.status(200).json({pets: pets})
+        } catch (error) {
+            if(error instanceof Error){
+                return res.status(500).json({error: error.message})
+            }
+            res.status(500).json({error: 'Unknown error.'})
 
-        res.status(200).json({pets: pets})
+        }
+    }
 
+    static async getAllUserPets(req: IRequestWithUser, res: Response){
+
+        const tokenUserId = (req.user as ITokenPayLoad).id
+
+        try{
+            const user = await User.findById(tokenUserId)
+
+            if(!user){
+                return res.status(404).json({message: 'User not found.'})
+            }
+
+            const pets = await Pet.find({'user._id': user._id}).sort('-createdAt')
+            res.status(200).json({pets})
+        } catch (error) {
+            if(error instanceof Error){
+                return res.status(500).json({error: error.message})
+            }
+            res.status(500).json({error: 'Unknown error.'})
+
+        }
+        
     }
 
 }
