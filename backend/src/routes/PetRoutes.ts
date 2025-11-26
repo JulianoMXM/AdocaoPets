@@ -5,3 +5,4 @@ export const router = Router()
 
 router.post('/create', checkToken, PetController.create)
 router.get('/', PetController.getAll)
+router.get('/mypets', checkToken, PetController.getAllUserPets)
