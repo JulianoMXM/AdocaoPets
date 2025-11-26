@@ -1,8 +1,6 @@
 import { UserController } from '../controllers/UserController.js'
 import { Router } from 'express'
 export const router = Router()
-import type {Response, Request } from 'express'
-import {User, type IUser} from '../models/User.js'
 
 //Token
 import { checkToken } from '../helpers/verify-token.js'
