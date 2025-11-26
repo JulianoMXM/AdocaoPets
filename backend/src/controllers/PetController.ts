@@ -163,4 +163,34 @@ export class PetController{
 
     }
 
+    static async deletePet(req: IRequestWithUser, res: Response){
+
+        const id = req.params.id
+
+        const tokenUserId = (req.user as ITokenPayLoad).id
+
+        try{
+
+            const pet = await Pet.findById(id)
+            if(!pet){
+                return res.status(404).json({message: 'Pet not found.'})
+            }
+
+            if(pet.user._id !== tokenUserId){
+                return res.status(401).json({message: 'Not authorized.'})
+            }
+
+            await pet.deleteOne()
+            return res.status(200).json({message: 'Pet deleted.'})
+
+        } catch (error) {
+            if(error instanceof Error){
+                return res.status(500).json({error: error.message})
+            }
+            res.status(500).json({error: 'Unknown error.'})
+
+        }
+
+    }
+
 }
