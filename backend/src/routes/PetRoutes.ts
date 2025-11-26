@@ -1,6 +1,6 @@
 import { Router } from 'express'
+import { PetController } from '../controllers/PetController.js'
+import { checkToken } from '../helpers/verify-token.js'
 export const router = Router()
-import type {Response, Request } from 'express'
-import {Pet, type IPet} from '../models/Pet.js'
 
-router.post('/')
+router.post('/create', checkToken, PetController.create)
