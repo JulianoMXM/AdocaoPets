@@ -118,4 +118,49 @@ export class PetController{
 
     }
 
+    static async editPet(req: IRequestWithUser, res: Response){
+
+        const id = req.params.id
+
+        const tokenUserId = (req.user as ITokenPayLoad).id
+
+        const {name, age, weight, color} = req.body
+
+        try{
+
+            const pet = await Pet.findById(id)
+            if(!pet){
+                return res.status(404).json({message: 'Pet not found.'})
+            }
+
+            if(pet.user._id !== tokenUserId){
+                return res.status(401).json({message: 'Not authorized.'})
+            }
+
+            if(name){
+                pet.name = name
+            }
+            if(age){
+                pet.age = age
+            }
+            if(weight){
+                pet.weight = weight
+            }
+            if(color){
+                pet.color = color
+            }
+
+            await pet.save()
+            res.status(200).json({message: 'Pet updated.'})
+
+        } catch (error) {
+            if(error instanceof Error){
+                return res.status(500).json({error: error.message})
+            }
+            res.status(500).json({error: 'Unknown error.'})
+
+        }
+
+    }
+
 }
