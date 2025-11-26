@@ -41,8 +41,9 @@ const petSchema = new Schema<IPet>({
             default: true
         },
         user: {
-            _id: {
-                type: String,
+            type: new Schema({
+                _id: {
+                type: Schema.Types.ObjectId,
                 required: true
             },
             name: {
@@ -53,6 +54,7 @@ const petSchema = new Schema<IPet>({
                 type: String,
                 required: true
             }
+            }, {_id: false}) //Don't create a new ID
         },
         adopter: {
             type: Object
