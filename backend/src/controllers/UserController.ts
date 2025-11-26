@@ -151,60 +151,61 @@ export class UserController {
     }
 
     static async editUser(req: IRequestWithUser, res: Response){
-
+        
         const id = req.params.id
 
         const tokenUserId = (req.user as ITokenPayLoad).id
 
-        const user = await User.findById(tokenUserId)
-
-        const {name, email, phone, password, confirmpassword} = req.body
-
-        if(!user){
-            return res.status(404).json({message: 'User not found.'})
-        }
-
-        //If typed id is not the user id
-        if(user._id.toString() !== id){
-            return res.status(401).json({message: 'Not authorized.'})
-        }
-
-        if(name){
-            user.name = name
-        }
-
-        if(phone){
-            user.phone = phone
-        }
-        
-        //If a new email was sent
-        if(email){
-            //If new email equals the email in usage
-            if(user.email !== email){
-                const userExists    = await User.findOne({email: email})
-
-                //If there's already an user with this email and it's not the own person
-                if(userExists && (userExists.id !== user.id)){
-                    return res.status(422).json({message: 'Please use another email.'})
-                }
-                user.email = email
-            }
-        }
-
-        if(password){
-            if(password !== confirmpassword){
-
-                return res.status(422).json({message: "Passwords don't match."})
-
-            }
-                //Password hash creation
-                const salt = await bcrypt.genSalt(12)
-                const passwordHash = await bcrypt.hash(password, salt)
-
-                user.password = passwordHash
-        }
-
         try{
+            const user = await User.findById(tokenUserId)
+
+            const {name, email, phone, password, confirmpassword} = req.body
+
+            if(!user){
+                return res.status(404).json({message: 'User not found.'})
+            }
+
+            //If typed id is not the user id
+            if(user._id.toString() !== id){
+                return res.status(401).json({message: 'Not authorized.'})
+            }
+
+            if(name){
+                user.name = name
+            }
+
+            if(phone){
+                user.phone = phone
+            }
+            
+            //If a new email was sent
+            if(email){
+                //If new email equals the email in usage
+                if(user.email !== email){
+                    const userExists    = await User.findOne({email: email})
+
+                    //If there's already an user with this email and it's not the own person
+                    if(userExists && (userExists.id !== user.id)){
+                        return res.status(422).json({message: 'Please use another email.'})
+                    }
+                    user.email = email
+                }
+            }
+
+            if(password){
+                if(password !== confirmpassword){
+
+                    return res.status(422).json({message: "Passwords don't match."})
+
+                }
+                    //Password hash creation
+                    const salt = await bcrypt.genSalt(12)
+                    const passwordHash = await bcrypt.hash(password, salt)
+
+                    user.password = passwordHash
+            }
+
+        
             await user.save()
             res.status(200).json({message: 'User updated.'})
 
