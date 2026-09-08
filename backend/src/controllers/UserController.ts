@@ -1,8 +1,13 @@
-import { constants } from 'buffer'
 import { User } from '../models/User.js'
 import { Request, Response} from 'express'
 import bcrypt  from 'bcrypt'
+import jwt from 'jsonwebtoken'
+
+//Token
 import { createUserToken } from '../helpers/create-user-token.js'
+import { getToken } from '../helpers/get-token.js'
+import { ITokenPayLoad } from '../types/TokenPayLoad.js'
+import { IRequestWithUser } from '../types/RequestWithUser.js'
 
 export class UserController {
 
@@ -11,45 +16,38 @@ export class UserController {
         const {name, email, password, confirmpassword, phone} = req.body
 
         if(!name){
-            res.status(422).json({message: 'O nome é obrigatório.'})
-            return
+            return res.status(422).json({message: 'Name is required.'})
         }
         if(!email){
-            res.status(422).json({message: 'O email é obrigatório.'})
-            return
+            return res.status(422).json({message: 'Email is required.'})
         }
         if(!password){
-            res.status(422).json({message: 'A senha é obrigatória.'})
-            return
+            return res.status(422).json({message: 'Password is required.'})
         }
         if(!confirmpassword){
-            res.status(422).json({message: 'A confirmação de senha é obrigatória.'})
-            return
+            return res.status(422).json({message: 'Confirmation password is required.'})
         }
         if(!phone){
-            res.status(422).json({message: 'O telefone é obrigatório.'})
-            return
+            return res.status(422).json({message: 'Phone is required.'})
         }
 
         if(password !== confirmpassword){
-            res.status(422).json({message: 'As senhas digitadas são diferentes.'})
-            return
+            return res.status(422).json({message: "Passwords don't match."})
         }
 
-        //Teste de usuário existente
+        //Test if user already exists
 
         const userExists = await User.findOne({email: email})
 
         if(userExists){
-            res.status(422).json({message: 'Já existe um usuário com esse email.'})
-            return
+            return res.status(422).json({message: 'Email already in usage.'})
         }
 
-        //Criação de senha
+        //Password hash creation
         const salt = await bcrypt.genSalt(12)
         const passwordHash = await bcrypt.hash(password, salt)
 
-        //Criação de Usuário
+        //User creation
 
         const user = new User({
             name,
@@ -61,13 +59,14 @@ export class UserController {
         try {
 
             const newUser = await user.save()
-            
+            res.status(201).json({message: 'User created with success.'})
             await createUserToken(newUser, req, res)
 
         } catch(error) {
             if(error instanceof Error){
-                res.status(500).json({message: error.message})
+                return res.status(500).json({message: error.message})
             }
+            res.status(500).json({error: 'Unknown error.'})
         }
 
     }
@@ -77,31 +76,175 @@ export class UserController {
         const {email, password} = req.body
 
         if(!email){
-            res.status(422).json({message: 'O email é obrigatório.'})
-            return
+            return res.status(422).json({message: 'Email is required.'})
         }
         if(!password){
-            res.status(422).json({message: 'A senha é obrigatória.'})
-            return
+            return res.status(422).json({message: 'Password is required.'})
         }
 
         const user = await User.findOne({email: email})
 
-        //Checa se o email existe
-
+        //Check if there's an user with this email
         if(!user){
-            res.status(422).json({message: 'Email inválido.'})
-            return
+            return res.status(422).json({message: 'Invalid email.'})
         }
 
         const checkPassword = await bcrypt.compare(password, user.password)
 
         if(!checkPassword){
-            res.status(422).json({message: 'Senha inválida.'})
-            return
+            return res.status(422).json({message: 'Invalid password.'})
         }
 
         await createUserToken(user, req, res)
+
+    }
+
+    static async checkUser(req: Request, res: Response){
+
+        let currentUser
+        const JWT_TOKEN = process.env.JWT_TOKEN || ""
+
+        if(req.headers.authorization){
+
+            const token = getToken(req)
+
+            if(!token){
+                currentUser = null
+            } else {
+                try {
+                    const decoded = jwt.verify(token, JWT_TOKEN) as ITokenPayLoad
+                    currentUser = await User.findById(decoded.id).select('-password')
+                } catch (error) {
+                    currentUser = null;
+                }
+            }
+
+        } else {
+            currentUser = null
+        }
+
+        res.status(200).json(currentUser)
+
+    }
+
+    static async findUserById(req: Request, res: Response){
+
+        const id = req.params.id
+
+        try{
+            const user = await User.findById(id).select('-password')
+
+            if(!user){
+                return res.status(404).json({message: 'User not found.'})
+            }
+
+            res.status(200).json(user)
+
+        }catch(error){
+
+            if(error instanceof Error){
+                return res.status(500).json({error: error.message})
+            }
+            res.status(500).json({error: 'Unknown error.'})
+        }
+
+    }
+
+    static async editUser(req: IRequestWithUser, res: Response){
+        
+        const id = req.params.id
+
+        const tokenUserId = (req.user as ITokenPayLoad).id
+
+        try{
+            const user = await User.findById(tokenUserId)
+
+            const {name, email, phone, password, confirmpassword} = req.body
+
+            if(!user){
+                return res.status(404).json({message: 'User not found.'})
+            }
+
+            //If typed id is not the user id
+            if(user._id.toString() !== id){
+                return res.status(401).json({message: 'Not authorized.'})
+            }
+
+            if(name){
+                user.name = name
+            }
+
+            if(phone){
+                user.phone = phone
+            }
+            
+            //If a new email was sent
+            if(email){
+                //If new email equals the email in usage
+                if(user.email !== email){
+                    const userExists    = await User.findOne({email: email})
+
+                    //If there's already an user with this email and it's not the own person
+                    if(userExists && (userExists.id !== user.id)){
+                        return res.status(422).json({message: 'Please use another email.'})
+                    }
+                    user.email = email
+                }
+            }
+
+            if(password){
+                if(password !== confirmpassword){
+
+                    return res.status(422).json({message: "Passwords don't match."})
+
+                }
+                    //Password hash creation
+                    const salt = await bcrypt.genSalt(12)
+                    const passwordHash = await bcrypt.hash(password, salt)
+
+                    user.password = passwordHash
+            }
+
+        
+            await user.save()
+            res.status(200).json({message: 'User updated.'})
+
+        } catch (error){
+            if(error instanceof Error){
+                return res.status(500).json({error: error.message})
+            }
+            res.status(500).json({error: 'Unknown error.'})
+        }
+
+
+    }
+
+    static async deleteUser(req: IRequestWithUser, res: Response){
+
+        const id = req.params.id
+
+        const tokenUserId = (req.user as ITokenPayLoad).id
+
+        const user = await User.findById(tokenUserId)
+
+        if(!user){
+            return res.status(404).json({message: 'User not found.'})
+        }
+
+        if(user._id.toString() !== id){
+            return res.status(401).json({message: 'Not authorized.'})
+        }
+
+        try{
+            await user.deleteOne()
+            res.status(200).json({message: 'User deleted.'})
+
+        } catch (error){
+            if(error instanceof Error){
+                return res.status(500).json({error: error.message})
+            }
+            res.status(500).json({error: 'Unknown error.'})
+        }
 
     }
 
